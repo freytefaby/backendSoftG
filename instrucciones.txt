@@ -1,0 +1,2 @@
+Cargar base de datos que se encuentra en la raiz del proyecto llamado soft-g.sql
+motor de la base de datos MYSQL 
