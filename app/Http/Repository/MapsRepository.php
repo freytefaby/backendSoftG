@@ -2,6 +2,7 @@
 namespace App\Http\Repository;
 use App\Models\Ruta;
 use App\Models\DetalleRuta;
+use App\Models\UsuariosExcel;
 Class MapsRepository {
     private $_mapsRepo;
 
@@ -58,34 +59,55 @@ Class MapsRepository {
         }
     }
 
-    public function cargarExcel(){
-        $path = base_path().'/public/DriverFull.xlsx';
-        $reader =  \PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
-        $spreadsheet = $reader->load($path);
-        $extract = [];
-        $sheet = $spreadsheet->getActiveSheet();
-
-        //$horaini = \Carbon\Carbon::parse("14:30")->diff("06:25")->format('%H:%i:%s');
-        $carbon = new \Carbon\carbon;
-        foreach($sheet->getRowIterator(2) as $row){
-            $nombres = $sheet->getCellByColumnAndRow(2,$row->getRowIndex());
-            $apellidos = $sheet->getCellByColumnAndRow(3,$row->getRowIndex());
-            $fecha = $sheet->getCellByColumnAndRow(4,$row->getRowIndex());
-            $horaini = $sheet->getCellByColumnAndRow(5,$row->getRowIndex());
-            $horafin = $sheet->getCellByColumnAndRow(6,$row->getRowIndex());
-            $diferencia = $carbon::parse($horafin->getvalue())->diff($horaini->getvalue())->format('%H:%I:%S');
-
-            //extraer diferencia horaria 
-            
-            array_push($extract,["nombres"=>$nombres->getvalue(),
-                                 "apellidos"=>$apellidos->getvalue(),
-                                 "fecha"=>$fecha->getCalculatedValue(),
-                                 "horaini"=>$horaini->getvalue(),
-                                 "horafin"=>$horafin->getvalue(),
-                                 "diferencia"=>$diferencia]);
-            
+    public function cargarExcel($request){
+        $file = base64_decode($request->get('content'));
+        $result = \Storage::disk('local')->put("example.xlsx",$file);
+        if($result){
+            $path = base_path().'/storage/app/example.xlsx';
+            $reader =  \PhpOffice\PhpSpreadsheet\IOFactory::createReader("Xlsx");
+            $spreadsheet = $reader->load($path);
+            $sheet = $spreadsheet->getActiveSheet();
+            $carbon = new \Carbon\carbon;
+            //ELIMINAMOS LOS USUARIOS QUE ESTEN ACTUALMENTE EN LA TABLA DE USUARIOS DE EXCEL
+            \DB::table("usuariosexcel")->truncate();
+            foreach($sheet->getRowIterator(2) as $row){
+                $nombres = $sheet->getCellByColumnAndRow(2,$row->getRowIndex());
+                $apellidos = $sheet->getCellByColumnAndRow(3,$row->getRowIndex());
+                $fecha = $sheet->getCellByColumnAndRow(4,$row->getRowIndex());
+                $horaini = $sheet->getCellByColumnAndRow(5,$row->getRowIndex());
+                $horafin = $sheet->getCellByColumnAndRow(6,$row->getRowIndex());
+                $diferencia = $carbon::parse($horafin->getvalue())->diff($horaini->getvalue())->format('%H:%I:%S');
+                $driver_id = $sheet->getCellByColumnAndRow(1,$row->getRowIndex());
+                //Insertar usuarios
+                $date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($fecha->getvalue());
+                $usuarios = new UsuariosExcel();
+                $usuarios->driver_id = $driver_id;
+                $usuarios->last_name = $apellidos;
+                $usuarios->first_name = $nombres;
+                $usuarios->actual_check_in = $horaini;
+                $usuarios->actual_drop_off = $horafin;
+                $usuarios->difftime = $diferencia;
+                $usuarios->fecha = $date;
+                $usuarios->save();
+                // array_push($extract,["nombres"=>$nombres->getvalue(),
+                //                      "apellidos"=>$apellidos->getvalue(),
+                //                      "fecha"=>$fecha->getCalculatedValue(),
+                //                      "horaini"=>$horaini->getvalue(),
+                //                      "horafin"=>$horafin->getvalue(),
+                //                      "diferencia"=>$diferencia]);
+                
+            }
+            \Storage::disk('local')->delete("example.xlsx");
+            $query = "SELECT * FROM usuariosexcel";
+            $usuariosExcel = \DB::select($query);
+            return $usuariosExcel;
         }
-        return $extract;
+
+        return [];
+
+
+
+       
     }
 
     public function cargarDetalleRutaAll(){

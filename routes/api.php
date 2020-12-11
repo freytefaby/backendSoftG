@@ -25,17 +25,18 @@ Route::group(['middleware'=>['jwt.auth']],function(){
     });
 
     Route::group(['prefix'=>'excel'],function(){
-        Route::get('/cargar','Core\MapsController@cargarExcel');
+        Route::post('/cargar','Core\MapsController@cargarExcel');
     });
 
-    Route::group(['prefix'=>'usuarios'],function(){
-        Route::post('/crear','Core\UsuariosController@crearUsuario');
-    });
 
     Route::get('/descargarDatos','Core\MapsController@descargarDatos');
 });
 
-Route::post('/usuarios/login','Core\UsuariosController@login');
+Route::group(['prefix'=>'usuarios'],function(){
+    Route::post('/crear','Core\UsuariosController@crearUsuario');
+    Route::post('/login','Core\UsuariosController@login');
+});
+
 
 
 

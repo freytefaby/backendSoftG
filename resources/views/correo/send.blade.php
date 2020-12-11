@@ -7,15 +7,14 @@
        
     </tr>
 
-    @if($usuarios)
         <tr>
-            <td>{{$usuarios->email}}</td>
-            <td>{{$usuarios->password}}</td>
+            <td>{{$usuario}}</td>
+            <td>{{$password}}</td>
            
         
         
         </tr>
 
-    @endif
+   
 
 </table>

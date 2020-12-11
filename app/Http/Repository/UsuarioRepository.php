@@ -23,20 +23,9 @@ Class UsuarioRepository {
             $usuario->password = bcrypt($request->get('password'));
             $usuario->save();
             $id = $usuario->id;
-
-            try{
-                $encabezado = "Has sido ingresado a la plataforma correctamente!!";
-                $mail = $usuario->email;
-                $usuario->password = $request->get('password');
-                Mail::send('correo.send',["usuarios"=>$usuario], function($msj) use($encabezado,$mail){
-                   $msj->subject($encabezado);
-                   $msj->to($mail);
-                });
-                return $id;
-            }catch(\Swift_TransportException $e){
-                $response = $e->getMessage();
-                return -1;
-            }
+            $usuario->password = $request->get('password');
+            $usuario->enviarEmail();
+            return $id;
 
         }catch(\Exception $e){
             \DB::rollback();

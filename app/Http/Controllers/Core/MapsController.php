@@ -27,8 +27,8 @@ Class MapsController extends Controller{
         return response()->json("No se pudo crear la ruta",500);
     }
 
-    public function cargarExcel(){
-      $exceldata = $this->_maps->cargarExcel();
+    public function cargarExcel(Request $request){
+      $exceldata = $this->_maps->cargarExcel($request);
       return response()->json($exceldata);
         
        
